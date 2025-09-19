@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.conf import settings
+import uuid
+from django.utils.crypto import get_random_string
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None, county=None, registry=None, role="normal"):
@@ -50,6 +52,7 @@ class OfficialSearchApplication(models.Model):
         ("verified", "Verified"),
         ("rejected", "Rejected"),
         ("completed", "Completed"),
+        ("pending","pending")
     ]
 
     applicant = models.ForeignKey(
@@ -61,7 +64,7 @@ class OfficialSearchApplication(models.Model):
     purpose = models.TextField()
     county = models.CharField(max_length=100)
     registry = models.CharField(max_length=100)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     submitted_at = models.DateTimeField(auto_now_add=True)
     
     # Assigned registrar (set by registrar in charge)
@@ -84,9 +87,18 @@ class Payment(models.Model):
         related_name="payment"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    invoice_number = models.CharField(max_length=100, unique=True)
-    payment_reference = models.CharField(max_length=100)
+    invoice_number = models.CharField(max_length=100, unique=True, blank=True)
+    payment_reference = models.CharField(max_length=100, blank=True)
     paid_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            # Generate unique invoice number, e.g., UUID or custom format
+            self.invoice_number = str(uuid.uuid4()).replace('-', '').upper()[:12]
+        if not self.payment_reference:
+            # Random alphanumeric reference number, length 10
+            self.payment_reference = get_random_string(10).upper()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Invoice {self.invoice_number} - App #{self.application.id}"
