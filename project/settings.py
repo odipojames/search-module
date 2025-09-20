@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,8 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
-    #"rest_framework.authtoken",
     'rest_framework_simplejwt',
+    'drf_yasg',
     'app',
     'corsheaders',
 ]
@@ -94,6 +95,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+        'PAGE_SIZE': 5
 }
 
 
@@ -132,7 +135,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "Africa/Nairobi"
 
 USE_I18N = True
 
@@ -144,6 +147,29 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Additional directories to look for static files (during dev)
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static'),
+# ]
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+# SWAGGER_SETTINGS to ensure proper display of the UI
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
+    },
+    "USE_SESSION_AUTH": False,  # Disable session authentication for swagger
+    "DOC_EXPANSION": "none",
+    "SHOW_REQUEST_HEADERS": True,
+    "OPERATIONS_SORTER": "alpha",
+    "JSON_EDITOR": True,
+    "DEFAULT_MODEL_RENDERING": "example",
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

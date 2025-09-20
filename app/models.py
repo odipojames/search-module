@@ -3,6 +3,14 @@ from django.db import models
 from django.conf import settings
 import uuid
 from django.utils.crypto import get_random_string
+import string, random
+
+
+def generate_reference_number():
+    prefix = "SRCH"
+    length = 6  
+    characters = string.ascii_uppercase + string.digits
+    return prefix + ''.join(random.choices(characters, k=length))
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None, county=None, registry=None, role="normal"):
@@ -52,7 +60,7 @@ class OfficialSearchApplication(models.Model):
         ("verified", "Verified"),
         ("rejected", "Rejected"),
         ("completed", "Completed"),
-        ("pending","pending")
+        ("pending", "Pending"),
     ]
 
     applicant = models.ForeignKey(
@@ -61,12 +69,13 @@ class OfficialSearchApplication(models.Model):
         related_name="applications"
     )
     parcel_number = models.CharField(max_length=100)
+    reference_number = models.CharField(max_length=10, unique=True, editable=False)
     purpose = models.TextField()
     county = models.CharField(max_length=100)
     registry = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     submitted_at = models.DateTimeField(auto_now_add=True)
-    
+
     # Assigned registrar (set by registrar in charge)
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -76,8 +85,17 @@ class OfficialSearchApplication(models.Model):
         related_name="assigned_applications"
     )
 
+    def save(self, *args, **kwargs):
+        if not self.reference_number:
+            # keep generating until unique
+            ref = generate_reference_number()
+            while OfficialSearchApplication.objects.filter(reference_number=ref).exists():
+                ref = generate_reference_number()
+            self.reference_number = ref
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"Application #{self.id} - {self.parcel_number}"
+        return f"{self.reference_number} - {self.parcel_number}"
 
 
 class Payment(models.Model):
