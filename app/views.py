@@ -16,6 +16,8 @@ from django.shortcuts import get_object_or_404
 from .models import OfficialSearchApplication,Certificate
 from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import ApplicationFilter
 
 
 
@@ -58,6 +60,8 @@ class ApplicantApplicationCreateView(generics.CreateAPIView):
     queryset = OfficialSearchApplication.objects.all()
     serializer_class = ApplicationSerializer
     permission_classes = [IsAuthenticated, IsApplicant]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ApplicationFilter
 
     def perform_create(self, serializer):
         serializer.save(applicant=self.request.user)
@@ -66,6 +70,8 @@ class ApplicantApplicationCreateView(generics.CreateAPIView):
 class ApplicantApplicationListView(generics.ListAPIView):
     serializer_class = ApplicationSerializer
     permission_classes = [IsAuthenticated, IsApplicant]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ApplicationFilter
 
     def get_queryset(self):
         return OfficialSearchApplication.objects.filter(applicant=self.request.user)
@@ -102,6 +108,8 @@ class ApplicantDownloadCertificateView(generics.RetrieveAPIView):
 class SubmittedApplicationsListView(generics.ListAPIView):
     serializer_class = ApplicationSerializer
     permission_classes = [IsAuthenticated, IsRegistrarInCharge]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ApplicationFilter
 
     def get_queryset(self):
         return OfficialSearchApplication.objects.exclude(
@@ -172,6 +180,9 @@ class AssignRegistrarView(APIView):
 class AssignedApplicationsListView(generics.ListAPIView):
     serializer_class = ApplicationSerializer
     permission_classes = [IsAuthenticated, IsRegistrar]
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ApplicationFilter
 
     def get_queryset(self):
         return OfficialSearchApplication.objects.filter(assigned_to=self.request.user)
